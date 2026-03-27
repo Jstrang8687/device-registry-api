@@ -12,3 +12,4 @@ if (require.main === module) {
         console.log('Device Registry API running on port ' + PORT);
     });
 }
+export default app;
