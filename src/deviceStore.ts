@@ -1,43 +1,43 @@
+import pool from "./db";
 import { Device, CreateDeviceDTO, DeviceStatus } from "./types";
-import { randomUUID } from "crypto";
 
 let devices: Device[] = [];
 
-export function getAllDevices(): Device[] {
-    return devices;
+export async function getAllDevices(): Promise<Device[]> {
+    const result = await pool.query(
+        "SELECT id, name, type, status, ip_address AS \"ipAddress\", registered_at AS \"registeredAt\" FROM devices"
+    );
+    return result.rows;
 }
 
-export function getDeviceById(id: string): Device | undefined {
-    return devices.find(device => device.id === id);
+export async function getDeviceById(id: string): Promise<Device | undefined> {
+    const result = await pool.query(
+        "SELECT id, name, type, status, ip_address AS \"ipAddress\", registered_at AS \"registeredAt\" FROM devices WHERE id = $1", [id]
+    );
+    return result.rows[0];
 }
 
-export function createDevice(dto: CreateDeviceDTO): Device {
-    const newDevice: Device = {
-        id: randomUUID(),
-        name: dto.name,
-        type: dto.type,
-        status: DeviceStatus.ONLINE,
-        ipAddress: dto.ipAddress,
-        registeredAt: new Date()
-    };
-    devices.push(newDevice);
-    return newDevice;
+export async function createDevice(dto: CreateDeviceDTO): Promise<Device> {
+    const result = await pool.query(
+        "INSERT INTO devices (name, type, ip_address) VALUES ($1, $2, $3) \
+         RETURNING id, name, type, status, ip_address AS \"ipAddress\", registered_at AS \"registeredAt\"",
+        [dto.name, dto.type, dto.ipAddress]
+    );
+    return result.rows[0];
 }
 
-export function updateDeviceStatus(id: string, status: DeviceStatus): Device | undefined {
-    const device = devices.find((d) => d.id === id);
-    if (!device) {
-        return undefined;
-    }
-    device.status = status;
-    return device;
+export async function updateDeviceStatus(id: string, status: DeviceStatus): Promise<Device | undefined> {
+    const result = await pool.query(
+        "UPDATE devices SET status = $1 WHERE id = $2 \
+        RETURNING id, name, type, status, ip_address AS \"ipAddress\", registered_at AS \"registeredAt\"",
+        [status, id]
+    );
+    return result.rows[0];
 }
 
-export function deleteDevice(id: string): boolean {
-    const index = devices.findIndex((d) => d.id === id);
-    if (index === -1) {
-        return false;
-    }
-    devices.splice(index, 1);
-    return true;
+export async function deleteDevice(id: string): Promise<boolean> {
+    const result = await pool.query(
+        "DELETE FROM devices WHERE id = $1", [id]
+    );
+    return result.rowCount !== null && result.rowCount > 0;
 }
