@@ -1,6 +1,6 @@
 # Device Registry API
 
-A REST API for registering, managing, and tracking streaming devices across engineering lab environments. Built with **Node.js**, **TypeScript**, and **Express**.
+A REST API for registering, managing, and tracking streaming devices across engineering lab environments. Built with **Node.js**, **TypeScript**, **Express**, and **PostgreSQL**.
 
 Inspired by real-world device lab tooling used in streaming platforms — where QA, product, and engineering teams need to remotely manage and automate hardware like Roku, Fire TV, Apple TV, and set-top boxes.
 
@@ -11,6 +11,8 @@ Inspired by real-world device lab tooling used in streaming platforms — where 
 - **Node.js** (v24+)
 - **TypeScript**
 - **Express**
+- **PostgreSQL**
+- **Jest** + **Supertest** for testing
 - **ts-node** + **nodemon** for development
 
 ---
@@ -20,6 +22,7 @@ Inspired by real-world device lab tooling used in streaming platforms — where 
 ### Prerequisites
 - Node.js v18+
 - npm
+- PostgreSQL
 
 ### Installation
 ```bash
@@ -28,12 +31,38 @@ cd device-registry-api
 npm install
 ```
 
+### Database Setup
+
+1. Create a PostgreSQL database:
+```sql
+CREATE DATABASE device_registry;
+```
+
+2. Create a `.env` file in the project root using `.env.example` as a reference and fill in your credentials:
+```
+DB_USER=postgres
+DB_HOST=localhost
+DB_NAME=device_registry
+DB_PASSWORD=your_password_here
+DB_PORT=5432
+```
+
+3. Run migrations:
+```bash
+npx ts-node src/migrate.ts
+```
+
 ### Run in development
 ```bash
 npm run dev
 ```
 
 Server runs at `http://localhost:3000`
+
+### Run tests
+```bash
+npm test
+```
 
 ---
 
@@ -57,9 +86,6 @@ curl -X POST http://localhost:3000/devices \
   -H "Content-Type: application/json" \
   -d '{"name": "Lab Roku 1", "type": "roku", "ipAddress": "192.168.1.101"}'
 ```
-curl -X POST http://localhost:3000/devices \
-  -H "Content-Type: application/json" \
-  -d '{"name": "Lab Apple_tv 1", "type": "apple_tv", "ipAddress": "192.168.3.101"}'
 
 **Supported device types:** `roku` `fire_tv` `apple_tv` `gaming_console` `set_top_box`
 
@@ -87,18 +113,22 @@ curl -X DELETE http://localhost:3000/devices/:id
 ## Project Structure
 ```
 src/
-├── index.ts          # Entry point
-├── types.ts          # Interfaces, enums (Device, DeviceType, DeviceStatus)
-├── deviceStore.ts    # In-memory data layer
+├── index.ts           # Entry point
+├── db.ts              # PostgreSQL connection pool
+├── migrate.ts         # Database migration
+├── types.ts           # Interfaces and enums (Device, DeviceType, DeviceStatus)
+├── deviceStore.ts     # Database query layer
+├── __tests__/
+│   └── devices.test.ts  # Jest + Supertest test suite (10 tests)
 └── routes/
-    └── devices.ts    # Route handlers
+    └── devices.ts     # Route handlers
 ```
 
 ---
 
 ## Roadmap
 
-- [ ] Persist devices to a database (PostgreSQL or MongoDB)
+- [x] Persist devices to PostgreSQL
 - [ ] Add authentication
 - [ ] Add a command endpoint to send mock instructions to devices
 - [ ] Dockerize the application
@@ -109,4 +139,4 @@ src/
 ## Author
 
 **Jason Strang**  
-[GitHub](https://github.com/Jstrang8687)
+[GitHub](https://github.com/Jstrang8687/device-registry-api)
